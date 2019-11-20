@@ -95,6 +95,7 @@ Controller<num_ip>::Controller(sc_module_name Controller): sc_module(Controller)
 	mkr = dlsym(hndl, "maker");
 	rtable = ((router*(*)())(mkr))();
 
+	SC_THREAD(CC_refresh); // used in CZ algorithm 
 	SC_THREAD(allocate_route);
 	for (UI i = 0; i < num_ip; i++)
 		sensitive << rtRequest[i];
@@ -346,7 +347,18 @@ void Controller<num_ip>::rcv_estimate()
 	}
 }
 
-
+///////////////////////////////////////////////////////////////////////////
+//Process used to refresh congestion values in CZ algroithm
+//////////////////////////////////////////////////////////////////////////
+	template<UI num_ip>
+void Controller<num_ip>::CC_refresh()
+{
+	while (true) {
+		rtable->congestCount = (rtable->congestCount == 100) ? 0 :\
+			(rtable->congestCount+1);
+		wait(10,SC_NS);
+	}
+}
 
 ///////////////////////////////////////////////////////////////////////////
 /// Process sensitive to route request
@@ -371,7 +383,10 @@ void Controller<num_ip>::allocate_route()
 				eventlog<<" i = "<<i;
 			if (rtRequest[i].event() && rtRequest[i].read() == ROUTE)
 			{
-
+				// NSF TESTING
+				cout<<r_in[i].val.pkthdr.nochdr.flithdr.payload.data_int<<endl;
+				
+				//
 				sc_uint<ADDR_SIZE> src = sourceAddress[i].read();
 				sc_uint<ADDR_SIZE> dest = destRequest[i].read();
 				//qrt************************************************************
@@ -404,7 +419,7 @@ void Controller<num_ip>::allocate_route()
 				// NSF BULLDOG MOTE -- CONGESTION ZONED CHANGES
 				UI op_dir;
 				if (RT_ALGO == CZ) {
-					rtable->congCount++;
+					rtable->congestCount++;
 					op_dir = rtable->calc_next(temp, src, dest);
 					if (op_dir == N) rtable->congestN++;
 					else if (op_dir == S) rtable->congestS++;
@@ -437,6 +452,8 @@ void Controller<num_ip>::allocate_route()
 					if (est_flit != NULL)
 					{
 						rs.est_out++;
+						// NSF testing
+						//est_flit->pkthdr.nochdr.flithdr.payload.data_int = rtable->congestCount;
 						estOut[i].write(*est_flit);
 					}
 					else
