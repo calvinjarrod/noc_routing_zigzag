@@ -45,7 +45,7 @@ class router {
 	
 	public:
 		// For CZ router
-		unsigned int congCount;
+		unsigned int congestCount;
 		unsigned int congestN, congestS, congestE, congestW;
 		//For Q-Router
 		UI num_nb;
