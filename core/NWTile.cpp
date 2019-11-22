@@ -256,7 +256,7 @@ NWTile<num_nb, num_ic, num_oc>::NWTile(sc_module_name NWTile, UI id): BaseNWTile
         Ochannel[i]->switch_cntrl(*nw_clock);	// clock
 
 				// NSF port connections to connect OC to Ctr
-				Ochannel[i]->C2OFlitCC[i](flitCCOut[i]);
+				Ochannel[i]->C2OFlitCC(flitCCOut[i]);
 
         switch (TOPO)
         {

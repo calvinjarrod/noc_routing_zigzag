@@ -313,8 +313,6 @@ void OutputChannel<num_ip>::entry()
 			if (inport[i].event())
 			{
 				r_in[i].val = inport[i].read();
-				// NSF test
-				r_in[i].val.pkthdr.nochdr.flithdr.payload.CC++;
 				//
 				//	cout<<this->name()<<": OC says received a packet from"<<i<<endl;
 				r_in[i].free = false;

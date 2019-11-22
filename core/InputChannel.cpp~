@@ -111,15 +111,6 @@ void InputChannel<num_op> :: read_flit()
         {
 
             flit_in = inport.read();	// read flit
-						int CC;
-						// NSF test
-						if (flit_in.pkttype == NOC && flit_in.pkthdr.nochdr.flittype == DATA) {
-							CC = flit_in.pkthdr.nochdr.flithdr.payload.CC;
-							I2CFlitCC.write(CC);
-							cout<<"Incoming flit from VC: "<<flit_in.vcid<<endl;
-						}
-						//cout<<"Congestion value: "<<CC<<endl;
-						//
             flit_in.simdata.ICtimestamp = sim_count - 1;	// set input timestamp (required for per channel latency stats)
             //cout << "ICtimestamp in IChannel :: "<<	flit_in.simdata.ICtimestamp<<endl;
             if (LOG >= 2)
@@ -600,12 +591,6 @@ void InputChannel<num_op> :: transmit_flit()
                     if (i != num_op - 1)  	// not to be done for core OC
                     {
                         flit_out.vcid = vc[vc_to_serve].vc_next_id;
-												// NSF testing
-												//cout<<"CC "<<flit_out.pkthdr.nochdr.flithdr.payload.CC\
-												//	<<endl;
-												//C2OFlitCC[flit.write(rtable->congest
-												cout<<"Moved from vc: "<<flit_out.vcid<<" to: "\
-													<<oldvcid<<endl;
                     }
                     // write flit to output port
                     flit_out.simdata.num_sw++;

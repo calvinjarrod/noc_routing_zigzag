@@ -96,6 +96,9 @@ struct InputChannel : public sc_module {
 	
 	sc_out<sc_uint<2> > notify_GT;;
 
+	// NSF output port from IC to Controller for CC
+	sc_out<int> I2CFlitCC;
+
 	// PORTS END //////////////////////////////////////////////////////////////////////////////
 	
 	//PORTS FOR Q_ROUTER 	

@@ -51,6 +51,8 @@ struct OutputChannel : public sc_module {
 	sc_in<bool>  switch_cntrl;		///< clock input port
 	sc_out<flit> outport;			///< output data/flit port
 	sc_in<creditLine> credit_in[NUM_VCS];	///< input port to recieve credit info (buffer status) from ICs of neighbor tiles
+	// NSF input port from Controller for CC
+	sc_in<int> C2OFlitCC;
 	// PORTS END ////////////////////////////////////////////////////////////////////////////////////
 	
 	/// Constructor

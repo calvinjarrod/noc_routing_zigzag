@@ -348,13 +348,13 @@ void Controller<num_ip>::rcv_estimate()
 }
 
 ///////////////////////////////////////////////////////////////////////////
-//Process used to refresh congestion values in CZ algroithm
+//NSF Process used to refresh congestion values in CZ algroithm
 //////////////////////////////////////////////////////////////////////////
 	template<UI num_ip>
 void Controller<num_ip>::CC_refresh()
 {
 	while (true) {
-		rtable->congestCount = (rtable->congestCount == 100) ? 0 :\
+		//rtable->congestCount = (rtable->congestCount == 100) ? 0 :\
 			(rtable->congestCount+1);
 		wait(10,SC_NS);
 	}
@@ -383,12 +383,11 @@ void Controller<num_ip>::allocate_route()
 				eventlog<<" i = "<<i;
 			if (rtRequest[i].event() && rtRequest[i].read() == ROUTE)
 			{
-				// NSF TESTING
-				cout<<r_in[i].val.pkthdr.nochdr.flithdr.payload.data_int<<endl;
 				
 				//
 				sc_uint<ADDR_SIZE> src = sourceAddress[i].read();
 				sc_uint<ADDR_SIZE> dest = destRequest[i].read();
+
 				//qrt************************************************************
 				sc_uint<64> timestamp = timestamp_ip[i].read();
 				//qrt************************************************************
@@ -418,13 +417,45 @@ void Controller<num_ip>::allocate_route()
 				//qrt************************************************************
 				// NSF BULLDOG MOTE -- CONGESTION ZONED CHANGES
 				UI op_dir;
-				if (RT_ALGO == CZ) {
-					rtable->congestCount++;
+				if (RT_ALGO == XY) { // <-- change this back to CZ
+					int flitCC = I2CFlitCC[i].read();
+					// update router's congestion count with MAX(rtableCC+1,flitCC+1)
+					if ((rtable->congestCount+1) > (flitCC+1)) 
+						rtable->congestCount++;
+					else rtable->congestCount = flitCC+1;	
+					// assign incoming port the congestion value from flit
+					// portCC is CC of neighbor
+					if (ip_dir == N) rtable->congestN = flitCC;
+					else if (ip_dir == S) rtable->congestS = flitCC;
+					else if (ip_dir == E) rtable->congestE = flitCC;
+					else if (ip_dir == W) rtable->congestW = flitCC;
+
+					cout<<"Controller "<<tileID<<" received CC of "<<flitCC<<\
+						" from "<<ip_dir<<", new CC for node: "<<rtable->congestCount<<endl;
+					// get route to next node
 					op_dir = rtable->calc_next(temp, src, dest);
-					if (op_dir == N) rtable->congestN++;
-					else if (op_dir == S) rtable->congestS++;
-					else if (op_dir == E) rtable->congestE++;
-					else if (op_dir == W) rtable->congestW++;
+					cout<<"OutputPort: "<<op_dir<<endl;		
+					cout<<"i="<<i<<endl;
+					
+					// determine portCC value for next node
+					if (op_dir == N) {
+						if ((rtable->congestCount-1) > (rtable->congestN+1))
+							rtable->congestN = rtable->congestCount-1;
+						else rtable->congestN++;
+					} else if (op_dir == S) {
+						if ((rtable->congestCount-1) > (rtable->congestS+1))
+							rtable->congestS = rtable->congestCount-1;
+						else rtable->congestS++;
+					} else if (op_dir == E) {
+						if ((rtable->congestCount-1) > (rtable->congestE+1))
+							rtable->congestE = rtable->congestCount-1;
+						else rtable->congestE++;
+					} else if (op_dir == W) {
+						if ((rtable->congestCount-1) > (rtable->congestW+1))
+							rtable->congestW = rtable->congestCount-1;
+						else rtable->congestW++;
+					}
+					
 				} else {
 					//UI op_dir = rtable->calc_next(temp, src, dest);
 					op_dir = rtable->calc_next(temp,src,dest);
