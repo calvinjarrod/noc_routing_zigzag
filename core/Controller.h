@@ -77,8 +77,8 @@ struct Controller : public sc_module {
 	sc_out<powerCreditLine> power_credit_out[num_ip-1];//o/p ports to send credit info(power values)from neighbouring tiles
 	sc_in<powerCreditLine> power_credit_in[num_ip-1];//input ports to recieve credit info(power values)from neighbouring tiles
 	// NSF controller ports to connect to IC and OC for CC
-	sc_in<int> I2CFlitCC[num_ip];
-	sc_out<int> C2OFlitCC[num_ip];
+	sc_in<sc_uint<8> > flitCCin[num_ip];
+	sc_out<sc_uint<8> > flitCCout[num_ip];
 	//END
 	// PORTS END /////////////////////////////////////////////////////////////////////////////
 	

@@ -97,7 +97,8 @@ struct InputChannel : public sc_module {
 	sc_out<sc_uint<2> > notify_GT;;
 
 	// NSF output port from IC to Controller for CC
-	sc_out<int> I2CFlitCC;
+	sc_out<sc_uint<8> > flitCCout;
+	sc_in<sc_uint<8> > flitCCin;
 
 	// PORTS END //////////////////////////////////////////////////////////////////////////////
 	

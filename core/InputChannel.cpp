@@ -115,8 +115,9 @@ void InputChannel<num_op> :: read_flit()
 						// NSF test
 						if (flit_in.pkttype == NOC && flit_in.pkthdr.nochdr.flittype == DATA) {
 							CC = flit_in.pkthdr.nochdr.flithdr.payload.CC;
-							I2CFlitCC.write(CC);
-							cout<<"Incoming flit from VC: "<<flit_in.vcid<<endl;
+							cout<<"IC: Receiving flit with CC: "<<CC<<endl;
+							flitCCout.write(CC);
+							//cout<<"Incoming flit from VC: "<<flit_in.vcid<<endl;
 						}
 						//cout<<"Congestion value: "<<CC<<endl;
 						//
@@ -752,6 +753,10 @@ template<UI num_op>
 void InputChannel<num_op>::routing_src(flit *flit_in)
 {
     int vc_id = flit_in->vcid;
+		int CC = flitCCin.read();
+		flit_in->pkthdr.nochdr.flithdr.payload.CC = CC;
+		cout<<"IC: Routing flit with CC: "<<CC<<endl; 
+//		CC = flit_in.pkthdr.nochdr.flithdr.payload.CC;
     rtRequest.write(ROUTE);
     sourceAddress.write(flit_in->src);
     destRequest.write(flit_in->pkthdr.nochdr.flithdr.header.rthdr.sourcehdr.route);
@@ -775,6 +780,7 @@ vc[vc_id].vcQ.flit_push(pack);
     else if (LOG >= 4)
         eventlog<<"\ntime: "<<sc_time_stamp()<<" name: "<<this->name()<<" IC: Unknown Event!"<<endl;
 
+		// NSF add CC change here!!!
     vc[vc_id].vc_route = nextRt.read();
     rtRequest.write(NONE);
 }

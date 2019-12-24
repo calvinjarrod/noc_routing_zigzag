@@ -204,9 +204,9 @@ struct NWTile : public BaseNWTile {
 	/// Source address from IC to Ctr
 	sc_signal<sc_uint<ADDR_SIZE> > srcAddr[num_ic];
 	/// NSF Flit CC value from IC to Ctr
-	sc_signal<int> flitCCIn[num_ic];
-	/// NSF Flit CC value from Ctr to OC
-	sc_signal<int> flitCCOut[num_ic];
+	sc_signal<sc_uint<8> > flitCCI2C[num_ic];
+	/// NSF Flit CC value from Ctr to IC
+	sc_signal<sc_uint<8> > flitCCC2I[num_ic];
 	/// EST signal for Q Router
 	sc_signal<sc_uint<64> > tstamp[num_ic];
 	sc_signal<sc_uint<32> > eid[num_ic];

@@ -84,8 +84,6 @@ struct payload_hdr {
 	int cmd;			///< command
 	int data_int;			///< integer data
 	const char *data_string;	///< string data
-	// NSF test
-	int CC;
 };
 
 ////////////////////////////////////////////////
@@ -194,7 +192,6 @@ struct sim_hdr {
 ////////////////////////////////////////////////
 struct flit {
 	pkt_type pkttype;	///< packet type (ANT, NOC, EST)
-	// NSF MOTE Congestion Counter
 	sim_hdr	 simdata;	///< simulation header
 	pkt_hdr  pkthdr;	///< packet header (depending on packet type)
 	int	 vcid;		///< virtual channel id

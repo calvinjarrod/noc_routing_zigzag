@@ -109,20 +109,6 @@ Controller<num_ip>::Controller(sc_module_name Controller): sc_module(Controller)
 	SC_THREAD(send_power_info);	// Thread sensitive to clock
 	sensitive_pos << switch_cntrl;
 
-	/*end*/
-	//for Q-router
-	//For Q-Routing
-	// initialize VC request to false
-	//vcRequest.initialize(false);
-
-	// initialize virtual channels and buffers
-	/*	ctrQ.num_bufs = ESTBUF;
-			ctrQ.pntr = 0;
-			ctrQ.full = false;
-			ctrQ.empty = true;*/
-	/*	check = 0;
-			pQtop = 0;*/
-
 	//qrt************************************************************
 	rs.est_out = 0;
 	rs.est_buffer = 0;
@@ -222,98 +208,6 @@ void Controller<num_ip>::transmitEst()
 		if (switch_cntrl.event() )  //&& (sim % 2)
 		{
 			sim_count++;
-			/*	//		late();
-			//	cout<<this->name()<<":(trans) "<<sim_count<<endl;
-			if(ctrQ.empty == false) { //enter only if there is a estimate packet in the Q
-			flit_out = ctrQ.flit_out();  //get the packet
-			UI i;
-			switch(TOPO) { // decide the direction
-
-			case TORUS:
-			//#ifdef TORUS
-			i = flit_out.pkthdr.esthdr.dir;
-			//#endif
-			break;
-
-			case MESH:
-			//#ifdef MESH
-			UI dir = flit_out.pkthdr.esthdr.dir;
-			switch(dir) {
-			case N: i = portN;
-			break;
-			case S: i = portS;
-			break;
-			case E: i = portE;
-			break;
-			case W: i = portW;
-			break;
-			case C: i = num_ip - 1;
-			break;
-			}
-			//#endif
-			break;
-			}
-
-
-			if(ocReady_in[i].read() == true) {	// OC ready to recieve flit
-
-			if(LOG >= 4)
-			eventlog<<"\ntime: "<<sc_time_stamp()<<" name: "<<this->name()<<" Ctr (QRT): Attempting to forward  estimate flit: "<<flit_out;
-
-			// VC request
-			if(LOG >= 4)
-			eventlog<<"\ntime: "<<sc_time_stamp()<<" name: "<<this->name()<<" tile: "<<tileID <<"Controller Requesting VC for dir: "<<i;
-
-			vcRequest.write(true);
-			opRequest.write(i);
-			wait();	// wait for ready event from VC
-
-
-			if(vcReady.event()) {
-			if(LOG >= 4)
-			eventlog<<"\ntime: "<<sc_time_stamp()<<" name: "<<this->name()<<" Ctr: vcReady event..."<<endl;
-			}
-			else if(switch_cntrl.event()) {
-			sim_count++;
-			//    late();
-			if(LOG >= 4)
-			eventlog<<"\ntime: "<<sc_time_stamp()<<" name: "<<this->name()<<" Ctr: unknown clock event..."<<endl;
-			}
-			// read next VCid sent by VC
-			UI vc_next_id = nextVCID.read();
-
-			if(vc_next_id == NUM_VCS+1) {	// VC not granted
-			if(LOG >= 4)
-			eventlog<<"\ntime: "<<sc_time_stamp()<<" name: "<<this->name()<<" Ctr: No free next vc, pushing flit in Q" <<endl;
-			// push flit back in fifo
-			flit_out.simdata.num_waits++;
-			if(flit_out.simdata.num_waits < WAITS)
-			ctrQ.flit_push(flit_out);
-			vcRequest.write(false);
-			continue;
-			}
-			// write flit to output port
-			flit_out.simdata.num_sw++;
-			flit_out.simdata.ctime = sc_time_stamp();
-			flit_out.vcid = vc_next_id;
-
-			ocPort_out[i].write(flit_out);
-
-			if(LOG >= 2)
-				eventlog<<"\ntime: "<<sc_time_stamp()<<" name: "<<this->name()<<" tile: "<<tileID<<"Controller says  Transmitting estimate flit to output port: "<<i<<flit_out;
-
-
-			vcRequest.write(false);
-		} // end outReady == true
-			else {
-				if(LOG >= 4)
-					eventlog<<"\ntime: "<<sc_time_stamp()<<" name: "<<this->name()<<" Ctr: OC cannot accept flit!"<<endl;
-				flit_out.simdata.num_waits++;
-				//	if(flit_out.simdata.num_waits < WAITS)
-				ctrQ.flit_push(flit_out);
-			}
-		}  //end of if Q not empty
-		rs.est_buffer = ctrQ.pntr;*/
 		} // end of if switch_cntrl
 	}// end of while
 } // end transmitest
@@ -418,11 +312,17 @@ void Controller<num_ip>::allocate_route()
 				// NSF BULLDOG MOTE -- CONGESTION ZONED CHANGES
 				UI op_dir;
 				if (RT_ALGO == XY) { // <-- change this back to CZ
-					int flitCC = I2CFlitCC[i].read();
+					int flitCC = flitCCin[i].read();
+					cout<<"CNT: Flit CC input: "<<flitCC<<endl;
 					// update router's congestion count with MAX(rtableCC+1,flitCC+1)
-					if ((rtable->congestCount+1) > (flitCC+1)) 
+					if ((rtable->congestCount+1) > (flitCC+1)) { 
 						rtable->congestCount++;
-					else rtable->congestCount = flitCC+1;	
+						flitCCout[i].write(rtable->congestCount++);
+					} else {
+						rtable->congestCount = flitCC+1;	
+						flitCCout[i].write(flitCC+1);
+					}
+					cout<<"CNT: Flit CC output: "<<rtable->congestCount<<endl;
 					// assign incoming port the congestion value from flit
 					// portCC is CC of neighbor
 					if (ip_dir == N) rtable->congestN = flitCC;
@@ -430,12 +330,12 @@ void Controller<num_ip>::allocate_route()
 					else if (ip_dir == E) rtable->congestE = flitCC;
 					else if (ip_dir == W) rtable->congestW = flitCC;
 
-					cout<<"Controller "<<tileID<<" received CC of "<<flitCC<<\
+					//cout<<"Controller "<<tileID<<" received CC of "<<flitCC<<\
 						" from "<<ip_dir<<", new CC for node: "<<rtable->congestCount<<endl;
 					// get route to next node
 					op_dir = rtable->calc_next(temp, src, dest);
-					cout<<"OutputPort: "<<op_dir<<endl;		
-					cout<<"i="<<i<<endl;
+					//cout<<"OutputPort: "<<op_dir<<endl;		
+					//cout<<"i="<<i<<endl;
 					
 					// determine portCC value for next node
 					if (op_dir == N) {
@@ -495,26 +395,6 @@ void Controller<num_ip>::allocate_route()
 				nextRt[i].write(op_dir);
 
 			}
-			/*if(RT_ALGO == QRT && rtRequest[i].event() && rtRequest[i].read() == ESTUPDATE ) {
-			//num_est_ct_rcv++;//willbe removed
-			sc_uint<ADDR_SIZE> est = sourceAddress[i].read();
-			sc_uint<ADDR_SIZE> dest = destRequest[i].read();
-			sc_uint<64> timestamp = timestamp_ip[i].read();
-
-			sc_uint<32> estid = est_pktID[i].read();
-			sc_uint<32> estsrc = est_pktsrc[i].read();
-			//updateInfo(estsrc,estid);
-			updateInfo(estsrc,estid);
-
-			//cout <<"Timestamp removed( pktid:"<< estid <<" Source :"<<estsrc<<")"<<endl;
-
-			rtable->update_estimate(i, dest , est ,timestamp);
-			//sc_uint<3> next_hop = dirToId(op_dir);
-			//sc_uint<3> next_hop = rtable.calc_next(i, dest);
-			rtReady[i].write(true);
-			//nextRt[i].write(op_dir);
-			}*/
-
 
 			// request from IC to update //////////////////////////
 			if (rtRequest[i].event() && rtRequest[i].read() == UPDATE)
@@ -534,95 +414,10 @@ void Controller<num_ip>::allocate_route()
 	}// end while
 }// end allocate_route
 
-/*template<UI num_ip>
-	void Controller<num_ip>::timeEst(UI timestamp, UI dir,UI src,UI pktid, UI dest){
-	if(pQtop < 100){
-//	cout<< "inside timeEst "<<endl;
-pQ[pQtop].estid = pktid;
-pQ[pQtop].timestamp = timestamp;
-pQ[pQtop].dir = dir;
-pQ[pQtop].dest = dest;
-pQ[pQtop].src = src;
-pQtop++;
-}
-}*/
-
-
-/*template<UI num_ip>
-	void Controller<num_ip>::late() {
-	int i = 0;
-	while(i < pQtop)
-	{
-	if(pQ[i].timestamp < sim_count)
-	i++;
-	else
-	break;
-	}
-//pQtop = pQtop - i;
-cout<<"Timereceived = "<<sim_count<<endl;
-for(int j = 0;j < i;j++)
-{
-int dir = pQ[j].dir;
-int dest = pQ[j].dest;
-rtable->update_estimate(dir,dest,penalty,0);
-//		cout<<"src = "<<pQ[j].src<<"estid = "<<pQ[j].estid<<"sim_count = "<<sim_count<<endl;
-if(WAITS == 1001)
-cout<<"     p added: Pktid = "<<pQ[j].estid<<" eT = "<<pQ[j].timestamp<<" amt: "<<penalty<<endl;
-}
-for(int k=0,j = i;j < pQtop;k++,j++){
-pQ[k].estid = pQ[j].estid;
-pQ[k].timestamp = pQ[j].timestamp;
-pQ[k].dir = pQ[j].dir;
-pQ[k].dest = pQ[j].dest;
-pQ[k].src = pQ[j].src;
-}
-pQtop -= i;
-//}
-
-template<UI num_ip>
-void Controller<num_ip>::updateInfo(UI src,UI pktid) {
-int i = 0;
-while(i < pQtop){
-if((pQ[i].estid == pktid && pQ[i].src == src) )//|| (pktid % 2)
-{
-if(WAITS == 1001)
-cout<<"Pktid = "<<pktid<<" TR = "<<sim_count<<" eT = "<<pQ[i].timestamp<<endl;
-break;
-}
-else
-i++;
-}
-if(i == pQtop){
-cout << "Est pkt arrived, Info not avilable , pktID :"<<pktid<<" Src:"<<src<<endl;
-return ;
-}
-while(i < pQtop-1 ){
-pQ[i].estid = pQ[i+1].estid;
-pQ[i].timestamp = pQ[i].timestamp;
-pQ[i].dir = pQ[i+1].dir;
-pQ[i].dest = pQ[i+1].dest;
-pQ[i].src = pQ[i+1].src;
-i++;
-}
-pQtop--;
-}*/
-
-//template<UI num_ip>
-//flit* Controller<num_ip>::create_est_flit(UI estimate, UI dirtoRoute, UI src, UI d, UI i) {
-
-
-
-
 //qrt************************************************************
 	template<UI num_ip>
 void Controller<num_ip>::create_est_flit(UI estimate,UI d, flit *est_out )   //CODEFLIT
 {
-
-	//	flit_out->src = tileID;//CODENR
-	//	flit_out->pkthdr.esthdr.dir = dirtoRoute ;//CODENR
-
-	//	flit_out->pkthdr.esthdr.pktID = est_pktID[i].read();//CODEPEN
-	//	flit_out->pkthdr.esthdr.src = src;//CODEPEN
 
 	est_out->simdata.gtime = sc_time_stamp(); //CODENR
 	/*	flit_out->simdata.ctime = sc_time_stamp();//CODENR

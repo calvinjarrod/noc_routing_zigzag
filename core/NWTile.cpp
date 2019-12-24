@@ -210,7 +210,8 @@ NWTile<num_nb, num_ic, num_oc>::NWTile(sc_module_name NWTile, UI id): BaseNWTile
         Ichannel[i]->sourceAddress(srcAddr[i]);	// source address to Ctr
 
 				// NSF port connections from IC to Ctl
-				Ichannel[i]->I2CFlitCC(flitCCIn[i]);
+				Ichannel[i]->flitCCout(flitCCI2C[i]);
+				Ichannel[i]->flitCCin(flitCCC2I[i]);
 
 				
 
@@ -256,7 +257,7 @@ NWTile<num_nb, num_ic, num_oc>::NWTile(sc_module_name NWTile, UI id): BaseNWTile
         Ochannel[i]->switch_cntrl(*nw_clock);	// clock
 
 				// NSF port connections to connect OC to Ctr
-				Ochannel[i]->C2OFlitCC(flitCCOut[i]);
+				//Ochannel[i]->C2OFlitCC(flitCCOut[i]);
 
         switch (TOPO)
         {
@@ -323,8 +324,8 @@ NWTile<num_nb, num_ic, num_oc>::NWTile(sc_module_name NWTile, UI id): BaseNWTile
     for (UI i = 0; i < num_ic; i++)
     {	
 				// NSF Ctr port connections to IC and OC
-				ctr.I2CFlitCC[i](flitCCIn[i]);
-				ctr.C2OFlitCC[i](flitCCOut[i]);
+				ctr.flitCCin[i](flitCCI2C[i]);
+				ctr.flitCCout[i](flitCCC2I[i]);
 
         ctr.rtRequest[i](rtReq[i]);		// route request from IC
         ctr.destRequest[i](destReq[i]);		// dest address from IC
